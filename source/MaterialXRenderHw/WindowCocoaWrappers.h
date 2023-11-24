@@ -20,6 +20,14 @@ void NSUtilHideWindow(void* pWindow);
 void NSUtilSetFocus(void* pWindow);
 void NSUtilDisposeWindow(void* pWindow);
 
+#ifdef TARGET_OS_IOS
+void* GetContext(void* pView);
+void* GetCurrentContext();
+void MakeCurrent(void* pContext);
+void* CreateContext(void* pView, void* sharedWithContext = 0);
+void DestroyCurrentContext(void** pContext);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

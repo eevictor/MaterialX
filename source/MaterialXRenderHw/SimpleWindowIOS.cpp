@@ -8,6 +8,7 @@
 #ifdef TARGET_OS_IOS
 
 #include <MaterialXRenderHw/SimpleWindow.h>
+#include <MaterialXRenderHw/WindowCocoaWrappers.h>
 
 MATERIALX_NAMESPACE_BEGIN
 
@@ -25,12 +26,24 @@ bool SimpleWindow::initialize(const char* title,
                               unsigned int width, unsigned int height,
                               void* /*applicationShell*/)
 {
-    _windowWrapper = WindowWrapper::create(nullptr);
+	// actually create a view.
+	void* win = NSUtilCreateWindow(width, height, title, true);
+	if (!win)
+	{
+		return false;
+	}
+	// keeping the view as internal handle.
+    _windowWrapper = WindowWrapper::create(nullptr, win);
     return true;
 }
 
 SimpleWindow::~SimpleWindow()
 {
+	if ( _windowWrapper ) {
+		void* view = _windowWrapper->internalHandle();
+		if ( view != NULL )
+			NSUtilDisposeWindow(view);
+	}
 }
 
 MATERIALX_NAMESPACE_END

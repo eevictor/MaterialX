@@ -65,7 +65,11 @@ bool GLTextureHandler::bindImage(ImagePtr image, const ImageSamplingProperties& 
     GLint uaddressMode = mapAddressModeToGL(samplingProperties.uaddressMode);
     GLint vaddressMode = mapAddressModeToGL(samplingProperties.vaddressMode);
     Color4 borderColor(samplingProperties.defaultColor);
+#ifdef TARGET_OS_IOS
+	// ios using gles30, no border color support.
+#else
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor.data());
+#endif
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, uaddressMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, vaddressMode);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilterType);
@@ -115,11 +119,19 @@ bool GLTextureHandler::createRenderResources(ImagePtr image, bool generateMipMap
     glBindTexture(GL_TEXTURE_2D, image->getResourceId());
 
     int glType, glFormat, glInternalFormat;
-    mapTextureFormatToGL(image->getBaseType(), image->getChannelCount(), false,
-        glType, glFormat, glInternalFormat);
+	// Using half float in place of float: texture has crack at U edge; Marble pattern is very corse.
+	mapTextureFormatToGL_forFramebuffer(image->getBaseType(), image->getChannelCount(), false, glType, glFormat, glInternalFormat);
+	// Using full float: solves crack problem but environent light shading is very dark, almost not working;
+	//mapTextureFormatToGL(image->getBaseType(), image->getChannelCount(), false, glType, glFormat, glInternalFormat);
+
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, image->getWidth(), image->getHeight(),
-        0, glFormat, glType, image->getResourceBuffer());
+#ifdef TARGET_OS_IOS
+	//
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, image->getWidth(), image->getHeight(), 0, glFormat, glType, image->getResourceBuffer());
+	glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, image->getWidth(), image->getHeight(), 0, glFormat, glType, image->getResourceBuffer());
+#else
+	glTexImage2D(GL_TEXTURE_2D, 0, glInternalFormat, image->getWidth(), image->getHeight(), 0, glFormat, glType, image->getResourceBuffer());
+#endif
     if (image->getChannelCount() == 1)
     {
         GLint swizzleMask[] = { GL_RED, GL_RED, GL_RED, GL_ONE };
@@ -216,6 +228,94 @@ int GLTextureHandler::mapFilterTypeToGL(ImageSamplingProperties::FilterType filt
         return enableMipmaps ? GL_NEAREST_MIPMAP_NEAREST : GL_NEAREST;
     }
     return enableMipmaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
+}
+
+void GLTextureHandler::mapTextureFormatToGL_forFramebuffer(Image::BaseType baseType, unsigned int channelCount, bool srgb,
+														 int& glType, int& glFormat, int& glInternalFormat)
+{
+#ifdef TARGET_OS_IOS
+	// refer to https://registry.khronos.org/OpenGL-Refpages/es3.0/html/glTexImage2D.xhtml
+	// to successful in using texture in glFramebufferTexture2D, internalFormat+format+type combination should be color-renderable.
+	switch (channelCount)
+	{
+		case 4: glFormat = GL_RGBA; break;
+		case 3: glFormat = GL_RGB; break;
+		case 2: glFormat = GL_RG; break;
+		case 1: glFormat = GL_RED; break;
+		default: throw Exception("Unsupported channel count in mapTextureFormatToGL");
+	}
+	
+	if (baseType == Image::BaseType::UINT8)
+	{
+		glType = GL_UNSIGNED_BYTE;
+		switch (channelCount)
+		{// Must be color-renderable
+			case 4: glInternalFormat = srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8; break;
+			case 3: glInternalFormat = GL_RGB8; break;
+			case 2: glInternalFormat = GL_RG8; break;
+			case 1: glInternalFormat = GL_R8; break;
+			default: throw Exception("Unsupported channel count in mapTextureFormatToGL");
+		}
+	}
+	else if (baseType == Image::BaseType::UINT16)
+	{
+		glType = GL_UNSIGNED_SHORT;
+		switch (channelCount)
+		{// Must be color-renderable
+			case 4: glInternalFormat = srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8; break;
+			case 3: glInternalFormat = GL_RGB8; break;
+			case 2: glInternalFormat = GL_RG8; break;
+			case 1: glInternalFormat = GL_R8; break;
+			default: throw Exception("Unsupported channel count in mapTextureFormatToGL");
+		}
+	}
+	else if (baseType == Image::BaseType::HALF)
+	{
+		glType = GL_HALF_FLOAT;
+		switch (channelCount)
+		{// Must be color-renderable for framebuffer
+				// texture filterable
+			case 4: glInternalFormat = GL_RGBA16F; break;
+			case 3: glInternalFormat = GL_RGB16F; break;
+			case 2: glInternalFormat = GL_RG16F; break;
+			case 1: glInternalFormat = GL_R16F; break;
+			default: throw Exception("Unsupported channel count in mapTextureFormatToGL");
+		}
+	}
+	else if (baseType == Image::BaseType::FLOAT)
+	{
+		glType = GL_FLOAT;
+		switch (channelCount)
+		{// Must be color-renderable for framebuffer. FLOAT mapping to 32F tested not working in iOS
+				/*
+				 case 4: glInternalFormat = srgb ? GL_SRGB8_ALPHA8 : GL_RGBA8; break;
+				 case 3: glInternalFormat = GL_RGB8; break;
+				 case 2: glInternalFormat = GL_RG8; break;
+				 case 1: glInternalFormat = GL_R8; break;
+				 */
+				// texture filterables are GL_R16F, however, .hdr texture has cracks at v direction edge.
+			case 4: glInternalFormat = GL_RGBA16F; break;
+			case 3: glInternalFormat = GL_RGB16F; break;
+			case 2: glInternalFormat = GL_RG16F; break;
+			case 1: glInternalFormat = GL_R16F; break;
+				// texture with are GL_R32F, solved crack at v direction edge problem, but too dark.
+				/*
+			case 4: glInternalFormat = GL_RGBA32F; break;
+			case 3: glInternalFormat = GL_RGB32F; break;
+			case 2: glInternalFormat = GL_RG32F; break;
+			case 1: glInternalFormat = GL_R32F; break;
+				*/
+			default: throw Exception("Unsupported channel count in mapTextureFormatToGL");
+		}
+	}
+	else
+	{
+		throw Exception("Unsupported base type in mapTextureFormatToGL");
+	}
+	
+#else
+	mapTextureFormatToGL(baseType, channelCount, true, glType, glFormat, glInternalFormat);
+#endif
 }
 
 void GLTextureHandler::mapTextureFormatToGL(Image::BaseType baseType, unsigned int channelCount, bool srgb,

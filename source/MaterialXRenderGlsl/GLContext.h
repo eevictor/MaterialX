@@ -14,7 +14,10 @@
 #include <MaterialXRenderHw/SimpleWindow.h>
 
 #if defined(__APPLE__)
+#ifdef TARGET_OS_IOS
+#else
 #include <OpenGL/gl.h>
+#endif
 #elif defined(__linux__) || defined(__FreeBSD__)
 #include <GL/glx.h>
 #endif

@@ -729,6 +729,31 @@ void GlslShaderGenerator::emitPixelStage(const ShaderGraph& graph, GenContext& c
         }
     }
 
+	// debug
+	{
+		if ( true ) {
+			try {
+				emitLineBreak(stage);
+				string debugSignature = "mx_debug_for_"+outputSocket->getVariable();
+				const ShaderOutput* outputConnection = outputSocket->getConnection();
+				if (outputConnection) {
+					debugSignature = debugSignature + "_" + outputConnection->getVariable();
+				}
+				string debugfile = "pbrlib/genglsl/lib/"+debugSignature+ ".glsl";
+				emitLine("//including "+debugfile, stage);
+				FilePath libraryPrefix = context.getOptions().libraryPrefix;
+				FilePath fullFilename = libraryPrefix.isEmpty() ? FilePath( debugfile) : libraryPrefix / debugfile;
+				FilePath resolvedFilename = context.resolveSourceFile(fullFilename, FilePath());
+				if ( resolvedFilename.isAbsolute() && resolvedFilename.exists() ) {
+					emitLibraryInclude( debugfile, context, stage);
+				}
+				emitLineBreak(stage);
+			} catch (ExceptionShaderGenError& e) {
+				printf("GlslShaderGenerator::emitPixelsStage : %s \n" , e.what() );
+			}
+		}
+	}
+	
     // End main function
     emitFunctionBodyEnd(graph, context, stage);
 }

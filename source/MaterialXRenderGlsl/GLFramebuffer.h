@@ -95,6 +95,7 @@ class MX_RENDERGLSL_API GLFramebuffer
     unsigned int _framebuffer;
     unsigned int _colorTexture;
     unsigned int _depthTexture;
+	unsigned int _depthrenderbuffer;
 };
 
 MATERIALX_NAMESPACE_END

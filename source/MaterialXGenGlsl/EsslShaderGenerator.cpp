@@ -26,7 +26,8 @@ void EsslShaderGenerator::emitDirectives(GenContext&, ShaderStage& stage) const
 {
     emitLine("#version " + getVersion(), stage, false);
     emitLineBreak(stage);
-    emitLine("precision mediump float", stage);
+	// iOS needs highp instead of mediump.
+    emitLine("precision highp float", stage);
 }
 
 void EsslShaderGenerator::emitUniforms(GenContext& context, ShaderStage& stage) const

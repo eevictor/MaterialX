@@ -290,7 +290,7 @@ void GlslMaterial::drawPartition(MeshPartitionPtr part) const
     }
     MeshIndexBuffer& indexData = part->getIndices();
     glDrawElements(GL_TRIANGLES, (GLsizei) indexData.size(), GL_UNSIGNED_INT, (void*) 0);
-    checkGlErrors("after draw partition");
+    //checkGlErrors("after draw partition");
 }
 
 void GlslMaterial::unbindGeometry()

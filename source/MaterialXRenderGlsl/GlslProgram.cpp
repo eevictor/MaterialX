@@ -106,16 +106,18 @@ void GlslProgram::build()
     {
         vertexShaderId = glCreateShader(GL_VERTEX_SHADER);
 
+		{std::string s = std::string("before Compile vertex shader: ") + std::to_string(glGetError()); checkGlErrors( s );}
         // Compile vertex shader
         const char* vertexChar = vertexShaderSource.c_str();
         glShaderSource(vertexShaderId, 1, &vertexChar, nullptr);
         glCompileShader(vertexShaderId);
+		{ std::string s = std::string("after glCompileShader vs: ") + vertexChar; checkGlErrors( s ); }
 
         // Check vertex shader
         glGetShaderiv(vertexShaderId, GL_COMPILE_STATUS, &glStatus);
         if (glStatus == GL_FALSE)
         {
-            errors.push_back("Error in compiling vertex shader:");
+            errors.push_back( "Error in compiling vertex shader: "+ this->getShader()->getName() +" \n"  + std::string(vertexChar) );
             glGetShaderiv(vertexShaderId, GL_INFO_LOG_LENGTH, &glInfoLogLength);
             if (glInfoLogLength > 0)
             {
@@ -137,16 +139,19 @@ void GlslProgram::build()
     {
         fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
 
-        // Compile fragment shader
+		{std::string s("before Compile fragment shader: "); checkGlErrors( s );}
+		// Compile fragment shader
         const char *fragmentChar = fragmentShaderSource.c_str();
         glShaderSource(fragmentShaderId, 1, &fragmentChar, nullptr);
         glCompileShader(fragmentShaderId);
+		std::string s("after glCompileShader ps: "); s+= std::string(fragmentChar);
+		checkGlErrors( s );
 
         // Check fragment shader
         glGetShaderiv(fragmentShaderId, GL_COMPILE_STATUS, &glStatus);
         if (glStatus == GL_FALSE)
         {
-            errors.push_back("Error in compiling fragment shader:");
+            errors.push_back("Error in compiling fragment shader: "+ this->getShader()->getName() +" \n" + std::string(fragmentChar) );
             glGetShaderiv(fragmentShaderId, GL_INFO_LOG_LENGTH, &glInfoLogLength);
             if (glInfoLogLength > 0)
             {
@@ -168,6 +173,8 @@ void GlslProgram::build()
         glAttachShader(_programId, vertexShaderId);
         glAttachShader(_programId, fragmentShaderId);
         glLinkProgram(_programId);
+		std::string s("after glLinkProgram : "); s+= _programId;
+		checkGlErrors( s );
 
         // Check the program
         glGetProgramiv(_programId, GL_LINK_STATUS, &glStatus);
@@ -223,6 +230,7 @@ void GlslProgram::clearBuiltData()
     if (_programId != UNDEFINED_OPENGL_RESOURCE_ID)
     {
         glDeleteProgram(_programId);
+		std::cout << "glDeleteProgram(" << _programId << ")" << std::endl;
         _programId = UNDEFINED_OPENGL_RESOURCE_ID;
     }
 
@@ -237,8 +245,9 @@ bool GlslProgram::bind()
         return false;
     }
 
+	{ std::string s("before program bind, programId "); s+= std::to_string(_programId); checkGlErrors( s ); }
     glUseProgram(_programId);
-    checkGlErrors("after program bind");
+	{ std::string s("after program bind, programId "); s+= std::to_string(_programId); checkGlErrors( s ); }
     return true;
 }
 

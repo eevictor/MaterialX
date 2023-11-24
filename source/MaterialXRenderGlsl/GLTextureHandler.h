@@ -56,6 +56,10 @@ class MX_RENDERGLSL_API GLTextureHandler : public ImageHandler
     static void mapTextureFormatToGL(Image::BaseType baseType, unsigned int channelCount, bool srgb,
                                      int& glType, int& glFormat, int& glInternalFormat);
 
+	/// Utility to map generic texture properties to OpenGL texture formats, which are Framebuffer color renderable.
+	static void mapTextureFormatToGL_forFramebuffer(Image::BaseType baseType, unsigned int channelCount, bool srgb,
+									 int& glType, int& glFormat, int& glInternalFormat);
+
   protected:
     // Protected constructor
     GLTextureHandler(ImageLoaderPtr imageLoader);

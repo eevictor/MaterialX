@@ -13,9 +13,13 @@
 
 #include <MaterialXCore/Library.h>
 
+#include <iostream>
+
 MATERIALX_NAMESPACE_BEGIN
 
 MX_RENDERGLSL_API void checkGlErrors(const string& context);
+MX_RENDERGLSL_API void checkGlErrors();
+MX_RENDERGLSL_API void checkGlFramebuffer();
 
 MATERIALX_NAMESPACE_END
 

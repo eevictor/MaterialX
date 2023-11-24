@@ -5,6 +5,69 @@
 
 #if defined (__APPLE__)
 
+#ifdef TARGET_OS_IOS
+#import <OpenGLES/ES3/gl.h>
+// OpenGL specific routines
+void* NSOpenGLChoosePixelFormatWrapper(bool allRenders, int bufferType, int colorSize, int depthFormat,
+									  int stencilFormat, int auxBuffers, int accumSize, bool minimumPolicy,
+									  bool accelerated, bool mp_safe, bool stereo, bool supportMultiSample)
+{
+	// nop
+	return nullptr;
+}
+void NSOpenGLReleasePixelFormat(void* pPixelFormat) {}
+void NSOpenGLReleaseContext(void* pContext)
+{
+	
+}
+void* NSOpenGLCreateContextWrapper(void* pSimpleWindow, void *pDummyContext)
+{
+	/*
+	EAGLContext * supportedContext = 0;
+	if (pDummyContext != 0) {
+		EAGLSharegroup *shareGRp = [([EAGLContext*)sharedWithContext sharegroup];
+		supportedContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3 sharegroup:shareGRp];
+	} else {
+		supportedContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3];
+	}
+	if ( supportedContext == nil ) {
+		return;
+	}
+	_glkview = [[GLKView alloc] initWithFrame:self.bounds context:supportedContext];
+	
+	// Configure renderbuffers created by the view
+	_glkview.drawableColorFormat = GLKViewDrawableColorFormatRGBA8888;
+	_glkview.drawableDepthFormat = GLKViewDrawableDepthFormat16;
+	_glkview.drawableStencilFormat = GLKViewDrawableStencilFormat8;
+
+	_contextHandle = c;
+
+	_isValid = truea;
+	 */
+	return nullptr;
+}
+void NSOpenGLSetDrawable(void* pContext, void* pView){}
+void NSOpenGLMakeCurrent(void* pContext){
+	
+}
+void* NSOpenGLGetCurrentContextWrapper(){
+	return NSOpenGLGetCurrentContextWrapper();
+}
+void NSOpenGLSwapBuffers(void* pContext){}
+void NSOpenGLClearCurrentContext(){}
+void NSOpenGLDestroyContext(void** pContext){}
+void NSOpenGLDestroyCurrentContext(void** pContext){}
+void NSOpenGLClearDrawable(void* pContext){}
+void NSOpenGLDescribePixelFormat(void* pPixelFormat, int attrib, int* vals){}
+void NSOpenGLGetInteger(void* pContext, int param, int* vals){}
+void NSOpenGLUpdate(void* pContext){}
+void* NSOpenGLGetWindow(void* pView){
+	return nullptr;
+	
+}
+void NSOpenGLInitializeGLLibrary(){}
+
+#else
 #import <Cocoa/Cocoa.h>
 #import <AppKit/NSApplication.h>
 #import "GLCocoaWrappers.h"
@@ -141,7 +204,7 @@ void* NSOpenGLGetCurrentContextWrapper()
 
 void NSOpenGLSwapBuffers(void* pContext)
 {
-    NSOpenGLContext* context = (NSOpenGLContext*)pContext;
+    NSOpenGLCon text* context = (NSOpenGLContext*)pContext;
     [context flushBuffer];
 }
 
@@ -214,5 +277,6 @@ void NSOpenGLInitializeGLLibrary()
     }
     [pool release];
 }
+#endif
 
 #endif

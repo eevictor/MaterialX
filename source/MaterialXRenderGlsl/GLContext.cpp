@@ -8,8 +8,13 @@
 #elif defined(__linux__) || defined(__FreeBSD__)
 #include <X11/Intrinsic.h>
 #elif defined(__APPLE__)
+#ifdef TARGET_OS_IOS
+#include <MaterialXRenderHw/WindowCocoaWrappers.h>
+//#include <MaterialXRenderGlsl/GLCocoaWrappers.h>
+#else
 #include <MaterialXRenderHw/WindowCocoaWrappers.h>
 #include <MaterialXRenderGlsl/GLCocoaWrappers.h>
+#endif
 #endif
 
 #include <MaterialXRenderGlsl/External/Glad/glad.h>
@@ -124,6 +129,31 @@ GLContext::GLContext(const SimpleWindowPtr window, HardwareContextHandle sharedW
 
 #elif defined(__APPLE__)
 
+#ifdef TARGET_OS_IOS
+GLContext::GLContext(const SimpleWindowPtr window, HardwareContextHandle sharedWithContext) :
+	_window(window),
+	_contextHandle(nullptr),
+	_isValid(false)
+{
+	// ignore pixelFormat for iOS
+	//void* pixelFormat = NSOpenGLChoosePixelFormatWrapper(true, 0, 32, 24, 8, 0, 0, false, false, false, false, false);
+	
+	// Create the context, but do not share against other contexts.
+	// (Instead, all other contexts will share against this one.)
+
+	// eagl context already created alone the view, simple get it from the view.
+	if (sharedWithContext != 0) {
+		//CreateContext(window, sharedWithContext);
+		_contextHandle = CreateContext(window->getWindowWrapper()->internalHandle(), sharedWithContext);
+	} else {
+		_contextHandle = GetContext( window->getWindowWrapper()->internalHandle() );
+	}
+	MakeCurrent(_contextHandle);
+
+	_isValid = true;
+
+}
+#else
 GLContext::GLContext(const SimpleWindowPtr window, HardwareContextHandle sharedWithContext) :
     _window(window),
     _contextHandle(nullptr),
@@ -144,6 +174,7 @@ GLContext::GLContext(const SimpleWindowPtr window, HardwareContextHandle sharedW
 
     _isValid = true;
 }
+#endif
 
 #endif
 
@@ -172,7 +203,11 @@ GLContext::~GLContext()
 
         if (_contextHandle != 0)
         {
-            NSOpenGLDestroyCurrentContext(&_contextHandle);
+#ifdef TARGET_OS_IOS
+			DestroyCurrentContext(&_contextHandle);
+#else
+			NSOpenGLDestroyCurrentContext(&_contextHandle);
+#endif
         }
 
 #endif
@@ -193,11 +228,19 @@ int GLContext::makeCurrent()
 #elif defined(__linux__) || defined(__FreeBSD__)
     makeCurrentOk = glXMakeCurrent(_xDisplay, _xWindow, _contextHandle);
 #elif defined(__APPLE__)
-    NSOpenGLMakeCurrent(_contextHandle);
-    if (NSOpenGLGetCurrentContextWrapper() == _contextHandle)
+#ifdef TARGET_OS_IOS
+	MakeCurrent(_contextHandle);
+    if (GetCurrentContext() == _contextHandle)
     {
         makeCurrentOk = 1;
     }
+#else
+	NSOpenGLMakeCurrent(_contextHandle);
+	if (NSOpenGLGetCurrentContextWrapper() == _contextHandle)
+	{
+		makeCurrentOk = 1;
+	}
+#endif
 #endif
 
     return makeCurrentOk;
